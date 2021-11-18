@@ -88,7 +88,35 @@ mostFatal<-mutate(mostFatal, MAKE = case_when( MAKE == '12' ~ "Ford",
 mostFatal
 mostFatal<-mostFatal%>%rename(region = STATE)
 mostFatal<-mostFatal%>%left_join(states, by= "region")
-statesMap%>%ggplot(aes(x=long, y=lat))+
+statesMap
+ggplot(statesMap,aes(x=long, y=lat))+
   geom_path(aes(group = group))+
-  geom_text(aes(label=MAKE), color = "red", data=mostFatal)
+ geom_text(aes(label=MAKE), color = "red", data=mostFatal)
+```
+The most deadly models are defined by the number of people killed in car accidents per model each year, the most deadly make in the midwest appears to be chevy while ford seems to be deadlier in coastal regions. Toyota and honda are also common throughout the US. This method if determining the most fatal doestn account for the volume sold so it skews towards manufacturers that sell higher volume in the US.
+```{r}
+acc
+pers
+accPers<-inner_join(acc, pers, by = "ST_CASE")
+accPers
+accPers1 <- accPers%>%count(DAY_WEEK)
+accPers2 <- accPers%>%count(HOUR.x)
+accPers2<-accPers2[-c(25),]
+accPers3 <- accPers%>%count(SEX)
+accPers3<-accPers3[-c(3,4),]
+accPers1%>%ggplot(aes(x=DAY_WEEK, y= n))+
+  geom_bar(stat="identity")
+accPers2%>%ggplot(aes(x=HOUR.x, y= n))+
+  geom_bar(stat="identity")
+accPers3%>%ggplot(aes(x=SEX, y= n))+
+  geom_bar(stat="identity")
+```
+Looking at these graphs we see that the most common times to get in an accident are on the weekend between the hours of 12pm to 11pm with peak accidents occurring at 6pm. Men are also twice as likely to get in an accident
+```{r}
+cntyMap<-accPers%>%group_by(STATE.x, COUNTY.x)%>%summarise(FATALS = sum(FATALS), LATITUDE = mean(LATITUDE), LONGITUD = mean(LONGITUD))
+us_counties <- map_data("county")
+ggplot(us_counties, aes(x=long, y=lat))+ 
+  geom_polygon(aes(group=group))+
+  geom_point(aes(x=LONGITUD,y=LATITUDE), data=cntyMap, color='lightgreen', alpha=0.2, size=0.02) + 
+  xlim(-130, -60) + ylim(20, 50) + coord_map()
 ```
