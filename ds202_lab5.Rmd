@@ -1,0 +1,94 @@
+---
+title: "ds202_lab5"
+author: "VIbhu Dhavala"
+date: "11/17/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+```{r}
+acc <- read.csv("https://raw.githubusercontent.com/xdaiISU/ds202materials/master/hwlabs/fars2017/accident.csv", stringsAsFactors = FALSE)
+pers<- read.csv("https://raw.githubusercontent.com/xdaiISU/ds202materials/master/hwlabs/fars2017/person.csv", stringsAsFactors = FALSE)
+```
+```{r}
+fatal<-pers%>%filter(INJ_SEV == 4)
+mostFatal<-fatal%>%select(STATE, COUNTY, MAKE)%>%count(STATE,MAKE)%>%drop_na(MAKE)
+mostFatal<-mostFatal%>%group_by(STATE)%>%top_n(1,n)
+mostFatal$STATE<-as.character(mostFatal$STATE)
+mostFatal$MAKE<-as.character(mostFatal$MAKE)
+statesMap <- map_data("state")
+states<-statesMap%>%group_by(region)%>%summarize(long = mean(long), lat = mean(lat), group = as.integer(mean(group)))
+states
+mostFatal<-mutate(mostFatal, STATE = case_when(STATE == '1' ~ "alabama",
+                                               STATE == '2' ~ "alaska",
+                                               STATE == '4' ~ "arizona",
+                                               STATE == '5' ~ "arkansas",
+                                               STATE == '6' ~ "california",
+                                               STATE == '8' ~ "colorado",
+                                               STATE == '9' ~ "connecticut",
+                                               STATE == '10' ~ "delaware",
+                                               STATE == '11' ~ "district of columbia",
+                                               STATE == '12' ~ "florida",
+                                               STATE == '13' ~ "georgia",
+                                               STATE == '15' ~ "hawaii",
+                                               STATE == '16' ~ "idaho",
+                                               STATE == '17' ~ "illinois",
+                                               STATE == '18' ~ "indiana",
+                                               STATE == '19' ~ "iowa",
+                                               STATE == '20' ~ "kansas",
+                                               STATE == '21' ~ "kentucky",
+                                               STATE == '22' ~ "louisiana",
+                                               STATE == '23' ~ "maine",
+                                               STATE == '24' ~ "maryland",
+                                               STATE == '25' ~ "massachusetts",
+                                               STATE == '26' ~ "michigan",
+                                               STATE == '27' ~ "minnesota",
+                                               STATE == '28' ~ "mississippi",
+                                               STATE == '29' ~ "missouri",
+                                               STATE == '30' ~ "montana",
+                                               STATE == '31' ~ "nebraska",
+                                               STATE == '32' ~ "nevada",
+                                               STATE == '33' ~ "new hampshire",
+                                               STATE == '34' ~ "new jersey",
+                                               STATE == '35' ~ "new mexico",
+                                               STATE == '36' ~ "new york",
+                                               STATE == '37' ~ "north carolina",
+                                               STATE == '38' ~ "north dakota",
+                                               STATE == '39' ~ "ohio",
+                                               STATE == '40' ~ "oklahoma",
+                                               STATE == '41' ~ "oregon",
+                                               STATE == '42' ~ "pennsylvania",
+                                               STATE == '43' ~ "puerto rico",
+                                               STATE == '44' ~ "rhode island",
+                                               STATE == '45'~ "south carolina",
+                                               STATE == '46'~ "south dakota",
+                                               STATE == '47' ~ "tennessee",
+                                               STATE == '48' ~ "texas",
+                                               STATE == '49' ~ "utah",
+                                               STATE == '50' ~ "vermont",
+                                               STATE == '52' ~ "Virgin islands",
+                                               STATE == '51' ~ "virginia",
+                                               STATE == '53' ~ "washington",
+                                               STATE == '54' ~ "west virginia",
+                                               STATE == '55' ~ "wisconsin",
+                                               STATE == '56' ~ "wyoming",
+                                               TRUE ~ STATE))
+mostFatal<-mutate(mostFatal, MAKE = case_when( MAKE == '12' ~ "Ford",
+                                               MAKE == '20' ~ "Chevrolet",
+                                               MAKE == '37' ~ "Honda",
+                                               MAKE == '49' ~ "Toyota",
+                                               TRUE ~ MAKE
+                                               ))
+
+```
+```{r}
+mostFatal
+mostFatal<-mostFatal%>%rename(region = STATE)
+mostFatal<-mostFatal%>%left_join(states, by= "region")
+statesMap%>%ggplot(aes(x=long, y=lat))+
+  geom_path(aes(group = group))+
+  geom_text(aes(label=MAKE), color = "red", data=mostFatal)
+```
